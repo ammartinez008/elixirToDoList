@@ -2,7 +2,16 @@ defmodule TodoList do
   defstruct auto_id: 1, entries: Map.new
 
   def new, do: %TodoList{}
-
+  
+  def new(entries \\ []) do
+    Enum.reduce(
+      entries,
+      %TodoList{},
+      fn(entry, todo_list_acc) ->
+        add_entry(todo_list_acc, entry)
+      end
+    )
+  end
 
   def add_entry(%TodoList{entries: entries, auto_id: auto_id} = todo_list, 
   entry
@@ -25,4 +34,37 @@ defmodule TodoList do
        end)
   end
   
+  def update_entry(todo_list, %{} = new_entry) do
+    update_entry(todo_list, new_entry.id, fn(_) -> new_entry end)
+  end
+
+  def update_entry(
+    %TodoList{entries: entries} = todo_list,
+    entry_id,
+    updater_fun
+  ) do
+    case entries[entry_id] do
+      nil -> todo_list
+
+      old_entry ->
+        old_entry_id = old_entry.id
+        new_entry = %{id: ^old_entry_id} = updater_fun.(old_entry)
+        new_entries = Map.put(entries, new_entry.id, new_entry)
+        %TodoList{todo_list | entries: new_entries}
+    end
+  end
+
+  def delete_entry(
+    %TodoList{entries: entries} = todo_list,
+    entry_id
+  ) do
+    case entries[entry_id] do
+    nil -> todo_list
+
+    entry_to_delete ->
+      id_to_delete = entry_to_delete.id
+      new_entries = Map.delete(entries, id_to_delete)
+      %TodoList{todo_list | entries: new_entries}
+    end
+  end
 end
